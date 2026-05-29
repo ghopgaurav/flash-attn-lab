@@ -29,6 +29,7 @@ dependencies = [
     "matplotlib>=3.7",
     "pandas>=2.0",
     "pybind11>=2.11",
+    "ninja>=1.10",  # required by torch.utils.cpp_extension JIT loader
 ]
 
 [project.optional-dependencies]

@@ -15,6 +15,10 @@ matplotlib>=3.7
 pandas>=2.0
 pybind11>=2.11
 
+# Build tools — ninja is required by torch.utils.cpp_extension.load for JIT
+# compilation of the CUDA C++ kernels. It is not on Colab by default.
+ninja>=1.10
+
 # Dev / testing
 pytest>=7.4
 black>=24.0
