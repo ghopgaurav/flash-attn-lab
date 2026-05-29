@@ -38,7 +38,7 @@ plots/              generated plots (roofline, latency, speedup)
 ## Quickstart
 
 ```bash
-git clone https://github.com/yourname/flash-attn-lab.git
+git clone https://github.com/ghopgaurav/flash-attn-lab.git
 cd flash-attn-lab
 pip install -e .
 python -m bench.harness --device-check

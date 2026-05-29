@@ -42,8 +42,8 @@ dev = [
 fa2 = ["flash-attn>=2.5"]
 
 [project.urls]
-Homepage = "https://github.com/yourname/flash-attn-lab"
-Issues = "https://github.com/yourname/flash-attn-lab/issues"
+Homepage = "https://github.com/ghopgaurav/flash-attn-lab"
+Issues = "https://github.com/ghopgaurav/flash-attn-lab/issues"
 
 [tool.setuptools.packages.find]
 include = ["flash_attn_lab*", "bench*"]
