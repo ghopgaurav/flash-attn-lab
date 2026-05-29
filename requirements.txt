@@ -1,0 +1,24 @@
+# Runtime requirements for flash-attn-lab.
+#
+# torch is environment-specific (CUDA version, OS). Install the appropriate
+# wheel BEFORE running `pip install -e .`. Triton ships with torch 2.5+ and
+# is therefore not pinned here.
+#
+# Recommended: PyTorch 2.5+ with CUDA 12.4
+#   pip install --index-url https://download.pytorch.org/whl/cu124 torch
+#
+# On Colab, torch is preinstalled; this file is still safe to install.
+
+torch>=2.5
+numpy>=1.24
+matplotlib>=3.7
+pandas>=2.0
+pybind11>=2.11
+
+# Dev / testing
+pytest>=7.4
+black>=24.0
+ruff>=0.4
+
+# Optional FA2 baseline. Comment out if you don't have a matching CUDA toolchain.
+# flash-attn>=2.5

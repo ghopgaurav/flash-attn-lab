@@ -1,0 +1,74 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flash-attn-lab"
+version = "0.1.0"
+description = "From-scratch fused attention in Triton and CUDA, with cross-architecture roofline benchmarks."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+authors = [{ name = "flash-attn-lab contributors" }]
+keywords = ["cuda", "triton", "attention", "flash-attention", "ml-systems", "gpu"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+# NOTE: torch and triton are intentionally not pinned here. Triton ships with
+# PyTorch 2.5+, and CUDA-enabled torch wheels are environment-specific
+# (Colab/local). Install torch separately per platform; see requirements.txt.
+dependencies = [
+    "numpy>=1.24",
+    "matplotlib>=3.7",
+    "pandas>=2.0",
+    "pybind11>=2.11",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "black>=24.0",
+    "ruff>=0.4",
+]
+# flash-attn (FA2) is a baseline only and is optional because it requires a
+# matching CUDA toolchain at install time.
+fa2 = ["flash-attn>=2.5"]
+
+[project.urls]
+Homepage = "https://github.com/yourname/flash-attn-lab"
+Issues = "https://github.com/yourname/flash-attn-lab/issues"
+
+[tool.setuptools.packages.find]
+include = ["flash_attn_lab*", "bench*"]
+exclude = ["tests*", "notebooks*", "profiles*", "plots*"]
+
+[tool.setuptools.package-data]
+"flash_attn_lab.cuda_kernels" = ["*.cu", "*.cuh", "*.cpp", "*.h"]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+extend-select = ["I", "UP", "B"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = [
+    "cuda: requires a CUDA-capable GPU",
+    "triton: requires Triton + a CUDA-capable GPU",
+    "sm89: requires SM89 (Ada) or newer for FP8",
+]

@@ -1,0 +1,90 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.dylib
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+.hypothesis/
+nosetests.xml
+coverage.xml
+*.cover
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Torch / Triton / CUDA build artifacts
+*.pt
+*.pth
+*.onnx
+*.engine
+.torch_extensions/
+torch_extensions/
+*.ptx
+*.cubin
+*.fatbin
+
+# Nsight profile artifacts (committed selectively per-run if at all)
+*.ncu-rep
+*.nsys-rep
+*.qdrep
+*.sqlite
+
+# Benchmark outputs (results/ and plots/ are tracked via .gitkeep, contents ignored)
+bench/results/*
+!bench/results/.gitkeep
+plots/*
+!plots/.gitkeep
+profiles/*
+!profiles/.gitkeep
+
+# Local Colab / Drive artifacts
+drive_checkpoint/
+*.local.json
