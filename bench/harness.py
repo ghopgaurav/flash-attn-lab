@@ -279,7 +279,7 @@ def run_sweep(
             gb_s = bytes_moved / seconds / 1e9
 
             row = {
-                "timestamp": dt.datetime.utcnow().isoformat(timespec="seconds") + "Z",
+                "timestamp": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
                 "git_sha": git_sha,
                 "gpu_name": info.name,
                 "sm": info.sm_str,
@@ -303,7 +303,7 @@ def run_sweep(
             row = {f: "" for f in CSV_FIELDS}
             row.update(
                 {
-                    "timestamp": dt.datetime.utcnow().isoformat(timespec="seconds") + "Z",
+                    "timestamp": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
                     "git_sha": git_sha,
                     "gpu_name": info.name,
                     "sm": info.sm_str,
