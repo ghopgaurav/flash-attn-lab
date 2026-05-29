@@ -46,6 +46,7 @@
 
 #include <cuda_runtime.h>
 #include <torch/extension.h>
+#include <c10/cuda/CUDAException.h>
 
 namespace flash_attn_lab {
 
