@@ -10,15 +10,15 @@ A from-scratch implementation of fused attention — Triton kernels and raw-CUDA
 
 ![cross-architecture roofline](plots/roofline.png)
 
-| GPU | SM | dtype | seqlen | head_dim | kernel | TFLOP/s achieved | % of peak fp16 TC | HBM GB/s achieved | % of peak HBM |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| T4 | 75 | fp16 | 4096 | 64 | triton_prefill | TBD | TBD | TBD | TBD |
-| A100 40GB | 80 | bf16 | 4096 | 64 | triton_prefill | TBD | TBD | TBD | TBD |
-| A100 80GB | 80 | bf16 | 8192 | 128 | triton_prefill | TBD | TBD | TBD | TBD |
-| L4 | 89 | bf16 | 4096 | 128 | triton_prefill | TBD | TBD | TBD | TBD |
-| RTX PRO 6000 | 120 | bf16 | 8192 | 128 | triton_prefill | TBD | TBD | TBD | TBD |
+| GPU | SM | dtype | S | D | kernel | TFLOP/s | % TC peak | HBM GB/s | % HBM peak | AI (F/B) | NCU SOL compute |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| A100-SXM4-40GB | 80 | bf16 | 8192 | 128 | triton_prefill | 116.4 | 37.3% | 56.9 | 3.7% | 2048 | TBD (NCU pending) |
+| A100-SXM4-40GB | 80 | bf16 | 8192 | 128 | torch_sdpa | 147.7 | 47.3% | 72.2 | 4.6% | 2048 | TBD (NCU pending) |
+| T4 | 75 | fp16 | 4096 | 64 | triton_prefill | TBD | TBD | TBD | TBD | TBD | TBD |
+| L4 | 89 | bf16 | 4096 | 128 | triton_prefill | TBD | TBD | TBD | TBD | TBD | TBD |
+| RTX PRO 6000 | 120 | bf16 | 8192 | 128 | triton_prefill | TBD | TBD | TBD | TBD | TBD | TBD |
 
-All numeric cells are `TBD` until the sweep has been run on each device. See [RESULTS.md](RESULTS.md) for the per-GPU breakdown.
+A100 numbers are measured (2026-05-29, `bench/results/a100.csv`). % TC peak = TFLOP/s / 312. % HBM peak = HBM GB/s / 1555. NCU SOL compute = hardware-counter ground truth — run `bench/ncu_extract.py` to populate. See [RESULTS.md](RESULTS.md) for the full per-GPU table.
 
 ## What's in this repo
 
