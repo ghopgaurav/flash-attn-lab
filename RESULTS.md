@@ -115,27 +115,45 @@ python bench/ncu_extract.py --csv bench/results/a100.csv
 
 ### A100-SXM4-40GB — triton_prefill (S=4096, D=128, B=1, H=16, causal)
 
-| Metric | Value | NCU counter |
+Profile: `profiles/triton_prefill_a100_s4096_d128.ncu-rep` (NCU 2025.1.1, 2026-05-29).
+Autotune winner: BLOCK_M=128, num_warps=8 — block=(256 threads), grid=(32, 16).
+
+| Metric | Value | NCU source |
 |---|---|---|
-| SM compute throughput (SOL) | TBD % of peak | `sm__throughput.avg.pct_of_peak_sustained_elapsed` |
-| Tensor-core pipe utilization | TBD % of peak | `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active` |
-| Memory throughput (SOL) | TBD % of peak | `l1tex__throughput.avg.pct_of_peak_sustained_elapsed` |
-| DRAM bandwidth achieved | TBD GB/s | `dram__bytes.sum.per_second` |
-| L2 hit rate | TBD % | `lts__t_sectors_hit.avg.pct_of_peak_sustained_elapsed` |
-| Warp occupancy | TBD % | `sm__warps_active.avg.pct_of_peak_sustained_active` |
-| **Bottleneck** | TBD | max(compute SOL, memory SOL) |
+| SM compute throughput (SOL) | **29.9% of peak** | `GPU Speed Of Light Throughput / Compute (SM) Throughput` |
+| Tensor-core pipe utilization | **37.7% of active cycles** | `ComputeWorkloadAnalysis` — Tensor FP sub-pipeline, highest-utilized |
+| Memory throughput (L1+L2+DRAM total) | **64.5 GB/s** | `Memory Workload Analysis / Memory Throughput` |
+| Theoretical occupancy | **12.5%** (2 warps/scheduler) | `Occupancy / TheoreticalOccupancy` — limited by registers + shared memory |
+| Achieved occupancy | **12.5%** | `Occupancy / Achieved Occupancy` |
+| Warp issue slot utilization | **35.7%** (1 instr per 2.8 cycles) | `SchedulerStats / IssueSlotUtilization` |
+| Primary stall | **Fixed-latency dep — 40.7% of CPI** | `WarpStateStats` — tensor-core result not ready |
+| Shared memory bank conflicts | **~20-22%** excess wavefronts on stores | `MemoryWorkloadAnalysis_Tables / SharedMemoryConflicts` |
+| **Bottleneck** | **Latency-limited** (occupancy-constrained) | NCU SOLBottleneck: both compute and memory below 60% |
+
+**Root cause:** With occupancy capped at 12.5% (2 warps/scheduler, limited by shared memory tile size + register pressure), the A100 cannot hide the ~6-cycle fixed-latency stall from tensor-core output dependencies. The scheduler is idle 64% of cycles. The tensor-core pipeline itself is healthy at 38% active-cycle utilization — the bottleneck is latency hiding, not arithmetic throughput or HBM bandwidth. This is the regime addressed by FA3/FA4 warp-specialized persistent kernel designs. The 20–22% shared-memory bank-conflict rate on stores is a secondary 7% overhead worth addressing in Phase 2 tiling work.
+
+**Note on metric interpretation:** NCU's "SM Compute Throughput (29.9%)" is higher than the analytical TFLOP/s percentage (51.0 / 312 = 16.3%) because NCU measures all SM instruction throughput (including non-GEMM ops like softmax, indexing, loads), while the analytical metric only counts mma flops. The gap quantifies the non-matmul fraction of kernel time — directly relevant to the asymmetric hardware scaling narrative.
 
 ### A100-SXM4-40GB — torch_sdpa (S=4096, D=128, B=1, H=16, causal)
 
-| Metric | Value | NCU counter |
+Not yet profiled. To produce the equivalent profile:
+```bash
+PROF_KERNEL=torch_sdpa /usr/local/cuda/bin/ncu \
+    --set full --target-processes all \
+    --kernel-name regex:fmha \
+    --csv -o profiles/torch_sdpa_a100_s4096_d128 \
+    python bench/profile_one.py
+```
+
+Analytical bench comparison (S=4096, D=128, B=1, H=16): torch_sdpa 70.5 TFLOP/s (22.6% of 312) vs triton_prefill 51.0 TFLOP/s (16.3%). NCU SM SOL for torch_sdpa expected to be higher than triton_prefill due to FA2's better occupancy and software pipelining.
+
+| Metric | Value | NCU source |
 |---|---|---|
-| SM compute throughput (SOL) | TBD % of peak | `sm__throughput.avg.pct_of_peak_sustained_elapsed` |
-| Tensor-core pipe utilization | TBD % of peak | `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active` |
-| Memory throughput (SOL) | TBD % of peak | `l1tex__throughput.avg.pct_of_peak_sustained_elapsed` |
-| DRAM bandwidth achieved | TBD GB/s | `dram__bytes.sum.per_second` |
-| L2 hit rate | TBD % | `lts__t_sectors_hit.avg.pct_of_peak_sustained_elapsed` |
-| Warp occupancy | TBD % | `sm__warps_active.avg.pct_of_peak_sustained_active` |
-| **Bottleneck** | TBD | max(compute SOL, memory SOL) |
+| SM compute throughput (SOL) | TBD | pending profile |
+| Tensor-core pipe utilization | TBD | pending profile |
+| Memory throughput | TBD | pending profile |
+| Achieved occupancy | TBD | pending profile |
+| **Bottleneck** | TBD | pending profile |
 
 ---
 

@@ -12,7 +12,7 @@ A from-scratch implementation of fused attention — Triton kernels and raw-CUDA
 
 | GPU | SM | dtype | S | D | kernel | TFLOP/s | % TC peak | HBM GB/s | % HBM peak | AI (F/B) | NCU SOL compute |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| A100-SXM4-40GB | 80 | bf16 | 8192 | 128 | triton_prefill | 116.4 | 37.3% | 56.9 | 3.7% | 2048 | TBD (NCU pending) |
+| A100-SXM4-40GB | 80 | bf16 | 8192 | 128 | triton_prefill | 116.4 | 37.3% | 56.9 | 3.7% | 2048 | **TBD** (S=4096 profile: 29.9%) |
 | A100-SXM4-40GB | 80 | bf16 | 8192 | 128 | torch_sdpa | 147.7 | 47.3% | 72.2 | 4.6% | 2048 | TBD (NCU pending) |
 | T4 | 75 | fp16 | 4096 | 64 | triton_prefill | TBD | TBD | TBD | TBD | TBD | TBD |
 | L4 | 89 | bf16 | 4096 | 128 | triton_prefill | TBD | TBD | TBD | TBD | TBD | TBD |
