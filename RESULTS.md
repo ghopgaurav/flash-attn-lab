@@ -59,12 +59,21 @@ CSV: `bench/results/a100.csv`
 | 4096 | 64 | fp16 | torch_sdpa | TBD | TBD | TBD | TBD |
 | 4096 | 64 | fp16 | triton_prefill | TBD | TBD | TBD | TBD |
 
-### L4 (SM89) — not yet run
+### L4 (SM89) — 2026-05-30
 
-| seqlen | head_dim | dtype | kernel | median ms | TFLOP/s | % TC peak | HBM GB/s |
-|---|---|---|---|---|---|---|---|
-| 1024 | 64 | bf16 | triton_prefill | TBD | TBD | TBD | TBD |
-| 4096 | 128 | bf16 | triton_prefill | TBD | TBD | TBD | TBD |
+Peak: **121 TFLOP/s** bf16 TC, **300 GB/s** GDDR6.
+CSV: `bench/results/l4.csv`
+
+| seqlen | head_dim | B | kernel | median ms | TFLOP/s | % TC peak | HBM GB/s | % HBM peak | AI (F/B) |
+|---|---|---|---|---|---|---|---|---|---|
+| 1024 | 128 | 1 | torch_sdpa | 0.114 | 37.8 | 31.2% | 147.6 | 49.2% | 256 |
+| 1024 | 128 | 1 | triton_prefill | 0.174 | 24.7 | 20.4% | 96.4 | 32.1% | 256 |
+| 4096 | 128 | 1 | torch_sdpa | 1.379 | 49.8 | 41.2% | 48.7 | 16.2% | 1024 |
+| 4096 | 128 | 1 | triton_prefill | 1.476 | 46.6 | 38.5% | 45.5 | 15.2% | 1024 |
+| 8192 | 128 | 1 | torch_sdpa | 5.163 | 53.2 | 44.0% | 26.0 | 8.7% | 2048 |
+| 8192 | 128 | 1 | triton_prefill | 5.236 | 52.5 | 43.4% | 25.6 | 8.5% | 2048 |
+
+> H=16 heads for all rows. % TC peak = TFLOP/s / 121. % HBM peak = HBM GB/s / 300.
 
 ### RTX PRO 6000 (Blackwell SM120) — not yet run
 
@@ -80,8 +89,8 @@ CSV: `bench/results/a100.csv`
 | GPU | SM | TFLOP/s | % TC peak | HBM GB/s | % HBM peak | AI (F/B) | bound |
 |---|---|---|---|---|---|---|---|
 | A100-SXM4-40GB | SM80 | 51.0 | 16.3% | 49.8 | 3.2% | 1024 | Compute |
+| L4 | SM89 | 46.6 | 38.5% | 45.5 | 15.2% | 1024 | Compute |
 | T4 | SM75 | TBD | TBD | TBD | TBD | TBD | TBD |
-| L4 | SM89 | TBD | TBD | TBD | TBD | TBD | TBD |
 | RTX PRO 6000 | SM120 | TBD | TBD | TBD | TBD | TBD | TBD |
 
 > The cross-architecture comparison at fixed (S, D, B, H) isolates the tensor-core generation effect.
