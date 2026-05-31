@@ -4,6 +4,20 @@ Append-only log of design decisions, trade-offs, and TODOs. New entries go on to
 
 ---
 
+## 2026-05-31 — T4 (SM75) shared-memory overflow fix in autotune
+
+**Bug:** `triton_attention_prefill` on T4 was 10–14× slower than `torch_sdpa` at D=128. Root cause: T4 has 64 KB shared memory per SM vs 164 KB on A100. The autotune config BLOCK_M=128, BLOCK_N=128, D=128 requires (128 + 2×128) × 128 × 2 = 98 KB — exceeding T4's budget. Triton silently degraded instead of erroring.
+
+**Fix:** `_autotune_configs()` now queries `torch.cuda.get_device_properties()` at config-generation time and filters out configs whose shared-memory footprint exceeds the device budget:
+- SM75 (T4): 64 KB cap → excludes BLOCK_M=128, BLOCK_N=128 for D=128
+- SM80+ (A100, L4, H100): 160 KB cap → full config space available
+
+`_smem_bytes(bm, bn, head_dim, dtype_bytes)` computes the per-block footprint as `(BLOCK_M + 2 × BLOCK_N) × HEAD_DIM × 2`. This is a lower bound (ignores online softmax state registers) but sufficient to exclude the clearly-overflowing configs.
+
+**Lesson:** Autotune configs must be architecture-aware. A config that wins on A100 can be pathologically slow on SM75 due to shared-memory constraints, and Triton's error handling does not surface this clearly.
+
+---
+
 ## 2026-05-29 — Phase 1 A100 baseline results and NCU bottleneck analysis
 
 First real GPU run on A100-SXM4-40GB (SM80, CUDA 12.8, PyTorch 2.11). Sweep: `torch_sdpa` and `triton_prefill`, bf16, S∈{512,1024,2048,4096,8192}, D∈{64,128}, H=16, B∈{1,2}, causal.

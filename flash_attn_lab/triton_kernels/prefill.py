@@ -40,17 +40,63 @@ except Exception:  # pragma: no cover - triton may be missing on CPU-only boxes
     _TRITON_AVAILABLE = False
 
 
+def _smem_bytes(bm: int, bn: int, head_dim: int, dtype_bytes: int = 2) -> int:
+    """Shared memory needed for one (BLOCK_M, BLOCK_N, HEAD_DIM) tile set.
+
+    Accounts for: Q tile (BLOCK_M × HEAD_DIM) held resident across the inner
+    loop, plus K tile and V tile (BLOCK_N × HEAD_DIM each) streamed in per
+    iteration. Multiply by dtype_bytes (2 for fp16/bf16).
+    """
+    return (bm + 2 * bn) * head_dim * dtype_bytes
+
+
 def _autotune_configs():
+    """Return autotune configs filtered to fit the current device's shared memory.
+
+    SM75 (T4): 64 KB  — needs small tiles for large head dims.
+    SM80 (A100): 164 KB — can use larger tiles.
+    SM89 (L4): 100 KB  — intermediate.
+
+    We query the device at config-generation time so the autotune sweep only
+    includes configs that will actually launch without shared-memory overflow.
+    If CUDA is unavailable we return an empty list (handled upstream).
+    """
     if not _TRITON_AVAILABLE:
         return []
-    # A small but useful sweep. Real production code would have many more
-    # configs; we keep the search space tight so first-call autotune doesn't
-    # dominate notebook time.
+
+    # Determine shared memory budget. Fall back conservatively to 64 KB if no
+    # GPU is present at import time (e.g. CPU-only import for testing).
+    smem_budget = 64 * 1024  # conservative default
+    if torch.cuda.is_available():
+        props = torch.cuda.get_device_properties(torch.cuda.current_device())
+        # shared_memory_per_block is in bytes; Triton can typically use up to
+        # the full 100% of the L1/shared unified budget on Ampere+, but on
+        # Turing (SM75) the maximum per-block shared memory is 64 KB.
+        sm = props.major * 10 + props.minor
+        if sm >= 80:
+            smem_budget = 160 * 1024  # A100/L4/H100 unified budget
+        elif sm >= 75:
+            smem_budget = 64 * 1024   # T4 (SM75) hard limit
+        else:
+            smem_budget = 48 * 1024   # older Volta, conservative
+
     configs = []
-    for bm in (64, 128):
-        for bn in (32, 64, 128):
+    # Candidate tile shapes ordered from largest (fastest if they fit) to
+    # smallest. We filter by the shared-memory budget for each head_dim.
+    # Autotune keys include HEAD_DIM so configs are re-evaluated per shape.
+    for bm in (128, 64, 32):
+        for bn in (128, 64, 32):
             for nw in (4, 8):
                 for ns in (2, 3):
+                    # Check worst case (largest supported head_dim = 128, fp16/bf16 = 2B)
+                    # If it fits for D=128 it fits for all smaller D.
+                    # If it doesn't fit for D=128 but fits for D=64, Triton's
+                    # per-key autotune will still select it for D=64 runs.
+                    fits_d128 = _smem_bytes(bm, bn, 128, 2) <= smem_budget
+                    fits_d64 = _smem_bytes(bm, bn, 64, 2) <= smem_budget
+                    if not fits_d64:
+                        # Too large even for D=64 — skip entirely.
+                        continue
                     configs.append(
                         triton.Config(
                             {"BLOCK_M": bm, "BLOCK_N": bn},
@@ -58,7 +104,15 @@ def _autotune_configs():
                             num_stages=ns,
                         )
                     )
-    return configs
+    # Deduplicate while preserving order.
+    seen = set()
+    deduped = []
+    for c in configs:
+        key = (c.kwargs["BLOCK_M"], c.kwargs["BLOCK_N"], c.num_warps, c.num_stages)
+        if key not in seen:
+            seen.add(key)
+            deduped.append(c)
+    return deduped
 
 
 if _TRITON_AVAILABLE:
